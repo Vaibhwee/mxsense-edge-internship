@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DHT22 Dashboard</title>
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1416.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<h2>DHT22 Temperature Dashboard</h2>
+<canvas id="tempChart" width="800" height="400"></canvas>
+
+<script>
+AWS.config.region = 'ap-south-1';
+
+AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+  IdentityPoolId: 'ap-south-1:9839d396-0cc5-49b4-bb98-61968771320c'
+});
+
+const dynamodb = new AWS.DynamoDB.DocumentClient();
+
+async function loadData() {
+  const params = {
+    TableName: "DHT22_data",
+    Limit: 20
+  };
+
+  const data = await dynamodb.scan(params).promise();
+
+  const temperatures = data.Items.map(item => item.payload.temperature);
+  const timestamps = data.Items.map(item => item.timestamp);
+
+  createChart(timestamps, temperatures);
+}
+
+function createChart(labels, dataPoints) {
+  new Chart(document.getElementById('tempChart'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Temperature (°C)',
+        data: dataPoints
+      }]
+    }
+  });
+}
+
+loadData();
+</script>
+
+</body>
+</html>
